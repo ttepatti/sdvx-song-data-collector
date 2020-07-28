@@ -18,6 +18,7 @@ import time
 from datetime import date
 
 # import these for finding all CSVs
+import os
 from os import listdir
 from os.path import isfile, join
 
@@ -27,6 +28,8 @@ from os.path import isfile, join
 sdvx_song_page = "Category:SOUND_VOLTEX_Songs"
 # Assemble the CSV file name using the current date
 csv_file_name = "song_page_ids--" + date.today().strftime("%Y-%m-%d") + ".csv"
+# Path that the script is being run from
+current_path = os.path.dirname(os.path.abspath(__file__))
 
 
 # Method for recursively searching a complex JSON tree
@@ -51,6 +54,20 @@ def extract_values(obj, key):
 
     results = extract(obj, arr, key)
     return results
+
+#################################################
+#   Get song pageid CSVs in current directory   #
+#################################################
+def get_pageid_csvs():
+	files = [f for f in listdir(current_path) if isfile(join(current_path, f))]
+
+	csv_files = []
+
+	for f in files:
+		if ".csv" in f:
+			csv_files.append(f)
+
+	return csv_files
 
 #########################
 #   Get list of songs   #
@@ -135,11 +152,21 @@ def main():
 	if user_input is "1":
 		get_song_list()
 	elif user_input is "2":
-		print("Please input the name of your song pageid CSV file")
-		# TODO: add a function to search for all song_page_ids--*.csv files
-		# and let the user pick which date they wanna use
-		user_input = input("> ")
-		get_song_data(user_input)
+		print("Please select which CSV file you'd like to use")
+		csv_files = get_pageid_csvs()
+		if len(csv_files) is 0:
+			print("Error: No CSV files found in current directory.")
+			exit()
+		else:
+			for i in range(len(csv_files)):
+				print(str(i) + " - " + str(csv_files[i]))
+			user_input = input("> ")
+			try:
+				index = int(user_input)
+				get_song_data(csv_files[index])
+			except:
+				print("Error: Your input wasn't a number!")
+				exit()
 	elif user_input is "3":
 		exit()
 	else:
