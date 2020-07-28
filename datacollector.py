@@ -9,6 +9,7 @@ import json
 # You can change this if the page name changes
 sdvx_song_page = "Category:SOUND_VOLTEX_Songs"
 
+
 # Method for recursively searching a complex JSON tree
 # for a specific key that may be nested
 # Source: https://hackersandslackers.com/extract-data-from-complex-json-python/
@@ -32,28 +33,28 @@ def extract_values(obj, key):
     results = extract(obj, arr, key)
     return results
 
-#########
-# Get list of songs
-#########
+#########################
+#   Get list of songs   #
+#########################
 
-# This is split into multiple lines to make it (hopefully) easier to read
+#### First, we'll get the initial song list
+
+# This request is split into multiple lines to make it (hopefully) easier to read
 page = requests.get("https://remywiki.com/api.php" \
 					+ "?action=query" \
 					+ "&format=json" \
 					+ "&list=categorymembers" \
 					+ "&cmtitle=" + sdvx_song_page)
 
-print("Return status code: " + str(page.status_code))
-
+# parse the returned page content as json data
 json_data = json.loads(page.content)
 
-# parse json for the list of song pageids
+# parse the json for the list of song pageids
 # for all additional page ids, we're going to use python's append() to add on to this list
 song_page_ids = extract_values(json_data, 'pageid')
 
-print(songs)
-
-print(json_data['continue']['cmcontinue'])
+#### Now, we check for 'cmcontinue' and fetch any additional songs, appending them
+#### on to our inital list
 
 # if 'cmcontinue' exists in our json data, that means there are more songs we need to fetch
 # the api does this to break up big lists into bite-sized sections that you download one at
@@ -81,8 +82,14 @@ except:
 	#get cmcontinue value
 	#run same string with cmcontinue value to get additional songs
 
-#########
-# Get song data
-#########
+########################
+#     Get song data    #
+########################
+
+# The main goal here is to fetch the following:
+# song title
+# artist name
+# song bpm
+# any dates on the page (we're looking for the date it was added to the game)
 
 # https://remywiki.com/api.php?action=query&format=json&prop=revisions&rvprop=content&rvslots=main&titles=%22Coconatsu%22%20wa%20yume%20no%20katachi
