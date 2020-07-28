@@ -22,6 +22,9 @@ import os
 from os import listdir
 from os.path import isfile, join
 
+# import this for parsing text
+import re
+
 
 #### Hardcoded Variables
 # You can change this if the RemyWiki page name changes
@@ -200,7 +203,15 @@ def parse_song_data(page_content):
 	# this method is run on 50 pages at a time
 	# first, convert page content to json
 	json_data = json.loads(page_content)
-	print(json_data)
+	
+	# grab tex content
+	text_content = extract_values(json_data, "*")
+
+	# store artists
+	artist = []
+	for song in text_content:
+		artist = re.search('Artist:(.*)<br>', song)
+		print(artist.group(1))
 
 	# The main goal here is to fetch the following:
 	# song title
