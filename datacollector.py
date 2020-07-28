@@ -135,10 +135,24 @@ def get_song_list():
 def get_song_data(csvname):
 	print("Fetching Page IDs from " + csvname + "...")
 
+	# store the page IDs in a bar-delimiated format (bd)
+	# since we can query the API with &pageids=1|2|3|4|5 to get multiple pages
+	pageids_bd = ""
+
 	with open(csvname, 'r') as read_obj:
 		csv_reader = reader(read_obj)
 		for row in csv_reader:
-			print(row)
+			pageids_bd = pageids_bd + "|" + row
+
+	print(pageids_bd)
+
+	page = requests.get("https://remywiki.com/api.php" \
+						+ "?action=query" \
+						+ "&format=json" \
+						+ "&prop=revisions" \
+						+ "&rvprop=content" \
+						+ "&rvslots=main" \
+						+ "&pageids=" + pageids_bd)
 
 	# The main goal here is to fetch the following:
 	# song title
