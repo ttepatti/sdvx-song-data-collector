@@ -26,8 +26,8 @@ from os.path import isfile, join
 #### Hardcoded Variables
 # You can change this if the RemyWiki page name changes
 sdvx_song_page = "Category:SOUND_VOLTEX_Songs"
-# Assemble the pageid file name using the current date
-pageid_file_name = "sdvx_songs--" + date.today().strftime("%Y-%m-%d") + ".pageids"
+# Assemble the pageids file name using the current date
+pageids_file_name = "sdvx_songs--" + date.today().strftime("%Y-%m-%d") + ".pageids"
 # Path that the script is being run from
 current_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -56,18 +56,18 @@ def extract_values(obj, key):
     return results
 
 #################################################
-#   Get song pageid files in current directory   #
+#   Get song pageids files in current directory   #
 #################################################
-def get_pageid_files():
+def get_pageids_files():
 	files = [f for f in listdir(current_path) if isfile(join(current_path, f))]
 
-	pageid_files = []
+	pageids_files = []
 
 	for f in files:
 		if ".pageids" in f:
-			pageid_files.append(f)
+			pageids_files.append(f)
 
-	return pageid_files
+	return pageids_files
 
 #########################
 #   Get list of songs   #
@@ -102,13 +102,15 @@ def get_song_list():
 			# cmcontinue value found, that means there are more songs we haven't gotten yet
 			print("Parsing data page " + str(pagecount) + "...")
 			# generate a new request, this time including our cmcontinue value
-			page = requests.get("https://remywiki.com/api.php" \
-						+ "?action=query" \
-						+ "&format=json" \
-						+ "&list=categorymembers" \
-						+ "&cmtitle=" + sdvx_song_page
-						+ "&cmcontinue=" + cmcontinue \
-						+ "&cmlimit=500")
+			page = requests.post("https://remywiki.com/api.php",
+								data = {
+									'action': 'query',
+									'format': 'json',
+									'list': 'categorymembers',
+									'cmtitle': sdvx_song_page,
+									'cmcontinue': cmcontinue,
+									'cmlimit': '500'
+								})
 			# parse page data as json
 			json_data = json.loads(page.content)
 			# append new song pageids to list
@@ -123,36 +125,44 @@ def get_song_list():
 
 	# Save the list of song page IDs to a CSV file for later processing
 	print("Writing pageids file...")
-	with open(pageid_file_name, "w") as file:
+	with open(pageids_file_name, "w") as file:
 		for pageid in song_page_ids:
 			file.write(str(pageid) + "\n")
-		print("Saved pageid output as " + pageid_file_name)
+		print("Saved pageid output as " + pageids_file_name)
 		file.close()
 
 ########################
 #     Get song data    #
 ########################
-def get_song_data(csvname):
-	print("Fetching Page IDs from " + csvname + "...")
+def get_song_data(pageids_file):
+	print("Fetching Page IDs from " + pageids_file + "...")
 
 	# store the page IDs in a bar-delimiated format (bd)
 	# since we can query the API with &pageids=1|2|3|4|5 to get multiple pages
 	pageids_bd = ""
 
-	with open(csvname, 'r') as read_obj:
-		csv_reader = reader(read_obj)
-		for row in csv_reader:
-			pageids_bd = pageids_bd + "|" + row
+	# assemble the list of page IDs for our API call
+	with open(pageids_file, 'r') as file:
+		for row in file:
+			if pageids_bd is "":
+				# don't add bar for the first element
+				pageids_bd = row.rstrip()
+			else:
+				pageids_bd = pageids_bd + "|" + row.rstrip()
 
-	print(pageids_bd)
+	# assemble a single API request with like 1000 page IDs...
+	page = requests.post("https://remywiki.com/api.php",
+						data = {
+							'action': 'query',
+							'format': 'json',
+							'prop': 'revisions',
+							'rvprop': 'content',
+							'rvslots': 'main',
+							'pageids': pageids_bd
+						})
 
-	page = requests.get("https://remywiki.com/api.php" \
-						+ "?action=query" \
-						+ "&format=json" \
-						+ "&prop=revisions" \
-						+ "&rvprop=content" \
-						+ "&rvslots=main" \
-						+ "&pageids=" + pageids_bd)
+	print(page.text)
+	json_data = json.loads(page.content)
 
 	# The main goal here is to fetch the following:
 	# song title
@@ -161,6 +171,13 @@ def get_song_data(csvname):
 	# any dates on the page (we're looking for the date it was added to the game)
 
 	# https://remywiki.com/api.php?action=query&format=json&prop=revisions&rvprop=content&rvslots=main&titles=%22Coconatsu%22%20wa%20yume%20no%20katachi
+
+################################
+#  Parse a song data API call  #
+################################
+def parse_song_data(json_data):
+
+	print(json_data)
 
 ################
 #     Main     #
@@ -177,20 +194,20 @@ def main():
 		get_song_list()
 	elif user_input is "2":
 		print("Please select which pageids file you'd like to use")
-		pageid_files = get_pageid_files()
-		if len(pageid_files) is 0:
+		pageids_files = get_pageids_files()
+		if len(pageids_files) is 0:
 			print("Error: No .pageids files found in current directory.")
 			exit()
 		else:
-			for i in range(len(pageid_files)):
-				print(str(i) + " - " + str(pageid_files[i]))
+			for i in range(len(pageids_files)):
+				print(str(i) + " - " + str(pageids_files[i]))
 			user_input = input("> ")
 			try:
 				index = int(user_input)
 			except:
 				print("Error: Your input wasn't a number!")
 				exit()
-			get_song_data(pageid_files[index])
+			get_song_data(pageids_files[index])
 	elif user_input is "3":
 		exit()
 	else:
