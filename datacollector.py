@@ -107,8 +107,9 @@ def get_song_data(csvname):
 	# https://remywiki.com/api.php?action=query&format=json&prop=revisions&rvprop=content&rvslots=main&titles=%22Coconatsu%22%20wa%20yume%20no%20katachi
 
 def main():
-	print("Please enter the number of what you'd like to do")
-	print("________________________________________________")
+	print("####################################################")
+	print("# Please enter the number of what you'd like to do #")
+	print("####################################################")
 	print("1 - Download pageids of all SDVX songs")
 	print("2 - Use list of SDVX pageids to get song data")
 	print("3 - Exit")
