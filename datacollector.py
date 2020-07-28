@@ -79,7 +79,7 @@ def get_song_list():
 									'action': 'query',
 									'format': 'json',
 									'list': 'categorymembers',
-									'cmtitle': sdvx_song_page
+									'cmtitle': sdvx_song_page,
 									'cmlimit': '500'
 								})
 
