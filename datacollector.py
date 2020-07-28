@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Sound Voltex Song Data Collector
-# Scrapes Remiwiki for compiling information about Sound Voltex songs
+# Scrapes RemyWiki for compiling information about Sound Voltex songs
 
 import requests
 import json
@@ -47,13 +47,37 @@ print("Return status code: " + str(page.status_code))
 
 json_data = json.loads(page.content)
 
-# parse json for song list
-songs = extract_values(json_data, 'pageid')
+# parse json for the list of song pageids
+# for all additional page ids, we're going to use python's append() to add on to this list
+song_page_ids = extract_values(json_data, 'pageid')
 
 print(songs)
 
-while "cmcontinue" in json_data:
-	sleep(1)
+print(json_data['continue']['cmcontinue'])
+
+# if 'cmcontinue' exists in our json data, that means there are more songs we need to fetch
+# the api does this to break up big lists into bite-sized sections that you download one at
+# a time, to save on bandwidth
+try:
+	while json_data['continue']['cmcontinue']:
+		cmcontinue = json_data['continue']['cmcontinue']
+		# cmcontinue value found, that means there are more songs we haven't gotten yet
+		print("cmcontinue: " + cmcontinue)
+		# generate a new request, this time including our cmcontinue value
+		page = requests.get("https://remywiki.com/api.php" \
+					+ "?action=query" \
+					+ "&format=json" \
+					+ "&list=categorymembers" \
+					+ "&cmtitle=" + sdvx_song_page
+					+ "&cmcontinue=" + cmcontinue)
+		# parse page data as json
+		json_data = json.loads(page.content)
+		# append new song pageids to list
+		song_page_ids.append(extract_values(json_data, 'pageid'))
+		# sleep so we send requests slowly!
+		time.sleep(1)
+except:
+	print("No \'cmcontinue\' value found, exiting loop.")
 	#get cmcontinue value
 	#run same string with cmcontinue value to get additional songs
 
