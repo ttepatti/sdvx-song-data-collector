@@ -2,11 +2,25 @@
 # Sound Voltex Song Data Collector
 # Scrapes RemyWiki for compiling information about Sound Voltex songs
 
+# for connecting to the website
 import requests
+
+# for parsing json
 import json
+
+# for exporting as CSV
 import csv
+
+# for sleep()
 import time
+
+# use this for assembling the saved CSV title
 from datetime import date
+
+# import these for finding all CSVs
+from os import listdir
+from os.path import isfile, join
+
 
 #### Hardcoded Variables
 # You can change this if the RemyWiki page name changes
