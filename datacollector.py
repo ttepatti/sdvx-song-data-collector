@@ -141,17 +141,16 @@ def get_song_data(pageids_file):
 	# since we can query the API with &pageids=1|2|3|4|5 to get multiple pages
 	pageids_bd = ""
 
+	# keep count of page ids, because we can only request 50 per API call
+	count = 0
+
 	# assemble the list of page IDs for our API call
 	with open(pageids_file, 'r') as file:
 		for row in file:
-			if pageids_bd is "":
-				# don't add bar for the first element
-				pageids_bd = row.rstrip()
-			else:
-				pageids_bd = pageids_bd + "|" + row.rstrip()
-
-	# assemble a single API request with like 1000 page IDs...
-	page = requests.post("https://remywiki.com/api.php",
+			# if count is 50, fire off an API request
+			if count is 50:
+				# assemble an API request with our 50 page IDs
+				page = requests.post("https://remywiki.com/api.php",
 						data = {
 							'action': 'query',
 							'format': 'json',
@@ -160,24 +159,29 @@ def get_song_data(pageids_file):
 							'rvslots': 'main',
 							'pageids': pageids_bd
 						})
+				parse_song_data(page.content)
 
-	print(page.text)
-	json_data = json.loads(page.content)
+			if pageids_bd is "":
+				# don't add bar for the first element
+				pageids_bd = row.rstrip()
+			else:
+				pageids_bd = pageids_bd + "|" + row.rstrip()
+			count +=1
+
+################################
+#  Parse a song data API call  #
+################################
+def parse_song_data(page_content):
+	# this method is run on 50 pages at a time
+	# first, convert page content to json
+	json_data = json.loads(page_content)
+	print(json_data)
 
 	# The main goal here is to fetch the following:
 	# song title
 	# artist name
 	# song bpm
 	# any dates on the page (we're looking for the date it was added to the game)
-
-	# https://remywiki.com/api.php?action=query&format=json&prop=revisions&rvprop=content&rvslots=main&titles=%22Coconatsu%22%20wa%20yume%20no%20katachi
-
-################################
-#  Parse a song data API call  #
-################################
-def parse_song_data(json_data):
-
-	print(json_data)
 
 ################
 #     Main     #
