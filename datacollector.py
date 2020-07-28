@@ -210,7 +210,7 @@ def parse_song_data(page_content):
 	# store artists
 	artist = []
 	for song in text_content:
-		artist = re.search('Artist:(.*)<br>', song)
+		artist = re.search('Artist: (.*)<br>', song)
 		print(artist.group(1))
 
 	# The main goal here is to fetch the following:
