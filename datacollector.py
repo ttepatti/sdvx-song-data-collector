@@ -203,21 +203,37 @@ def parse_song_data(page_content):
 	# this method is run on 50 pages at a time
 	# first, convert page content to json
 	json_data = json.loads(page_content)
+
+	# grab the song titles here
+	song_titles = extract_values(json_data, "title")
+	for song in song_titles:
+		print(song)
 	
-	# grab tex content
+	# grab main text paragraph
 	text_content = extract_values(json_data, "*")
 
-	# store artists
-	artist = []
+	# grab and store artists & bpms
+	artists = []
+	bpms = []
 	for song in text_content:
-		artist = re.search('Artist: (.*)<br>', song)
-		print(artist.group(1))
+		# re.search returns a group so we have to grab group(1) and store that
+		artists.append(re.search('Artist: (.*)<br>', song).group(1))
+		bpms.append(re.search('BPM: (.*)<br>', song).group(1))
+
+	## Assemble our final song_data list here
+	# This is a hard coded variable to store our final song data structures
+	song_data = []
+	for i in range(len(song_titles)):
+		song_data.append([song_titles[i], artists[i], bpms[i]])
+
+	print(song_data)
 
 	# The main goal here is to fetch the following:
-	# song title
-	# artist name
 	# song bpm
 	# any dates on the page (we're looking for the date it was added to the game)
+	# if two dates are detected, it should pull the data between the \n before the date
+	# and the \n after the date and ask the user if this is the correct release date
+	# the user can either enter y or n 
 
 ################
 #     Main     #
