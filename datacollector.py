@@ -11,6 +11,9 @@ import json
 # for exporting as CSV
 import csv
 
+# for reading CSVs
+from csv import reader
+
 # for sleep()
 import time
 
@@ -26,8 +29,8 @@ from os.path import isfile, join
 #### Hardcoded Variables
 # You can change this if the RemyWiki page name changes
 sdvx_song_page = "Category:SOUND_VOLTEX_Songs"
-# Assemble the CSV file name using the current date
-csv_file_name = "song_page_ids--" + date.today().strftime("%Y-%m-%d") + ".csv"
+# Assemble the pageid file name using the current date
+pageid_file_name = "sdvx_songs--" + date.today().strftime("%Y-%m-%d") + ".pageids"
 # Path that the script is being run from
 current_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -56,18 +59,18 @@ def extract_values(obj, key):
     return results
 
 #################################################
-#   Get song pageid CSVs in current directory   #
+#   Get song pageid files in current directory   #
 #################################################
-def get_pageid_csvs():
+def get_pageid_files():
 	files = [f for f in listdir(current_path) if isfile(join(current_path, f))]
 
-	csv_files = []
+	pageid_files = []
 
 	for f in files:
-		if ".csv" in f:
-			csv_files.append(f)
+		if ".pageids" in f:
+			pageid_files.append(f)
 
-	return csv_files
+	return pageid_files
 
 #########################
 #   Get list of songs   #
@@ -95,10 +98,12 @@ def get_song_list():
 	# the api does this to break up big lists into bite-sized sections that you download one at
 	# a time, to save on bandwidth
 	try:
+		pagecount = 0;
 		while json_data['continue']['cmcontinue']:
+			pagecount += 1
 			cmcontinue = json_data['continue']['cmcontinue']
 			# cmcontinue value found, that means there are more songs we haven't gotten yet
-			print("cmcontinue: " + cmcontinue)
+			print("Parsing data page " + str(pagecount) + "...")
 			# generate a new request, this time including our cmcontinue value
 			page = requests.get("https://remywiki.com/api.php" \
 						+ "?action=query" \
@@ -110,7 +115,8 @@ def get_song_list():
 			# parse page data as json
 			json_data = json.loads(page.content)
 			# append new song pageids to list
-			song_page_ids.append(extract_values(json_data, 'pageid'))
+			for id in extract_values(json_data, 'pageid'):
+				song_page_ids.append(id)
 			# sleep so we send requests slowly!
 			time.sleep(1)
 	except Exception as e:
@@ -119,20 +125,24 @@ def get_song_list():
 		#run same string with cmcontinue value to get additional songs
 
 	# Save the list of song page IDs to a CSV file for later processing
-	print("Writing CSV file...")
-	with open(csv_file_name, "w") as file:
-		writer = csv.writer(file)
-		writer.writerow("pageid")
+	print("Writing pageids file...")
+	with open(pageid_file_name, "w") as file:
 		for pageid in song_page_ids:
-			writer.writerow(str(pageid))
-		print("Saved pageid output as " + csv_file_name)
+			file.write(str(pageid) + "\n")
+		print("Saved pageid output as " + pageid_file_name)
 		file.close()
 
 ########################
 #     Get song data    #
 ########################
 def get_song_data(csvname):
-	print(csvname)
+	print("Fetching Page IDs from " + csvname + "...")
+
+	with open(csvname, 'r') as read_obj:
+		csv_reader = reader(read_obj)
+		for row in csv_reader:
+			print(row)
+
 	# The main goal here is to fetch the following:
 	# song title
 	# artist name
@@ -152,21 +162,21 @@ def main():
 	if user_input is "1":
 		get_song_list()
 	elif user_input is "2":
-		print("Please select which CSV file you'd like to use")
-		csv_files = get_pageid_csvs()
-		if len(csv_files) is 0:
-			print("Error: No CSV files found in current directory.")
+		print("Please select which pageids file you'd like to use")
+		pageid_files = get_pageid_files()
+		if len(pageid_files) is 0:
+			print("Error: No .pageids files found in current directory.")
 			exit()
 		else:
-			for i in range(len(csv_files)):
-				print(str(i) + " - " + str(csv_files[i]))
+			for i in range(len(pageid_files)):
+				print(str(i) + " - " + str(pageid_files[i]))
 			user_input = input("> ")
 			try:
 				index = int(user_input)
-				get_song_data(csv_files[index])
 			except:
 				print("Error: Your input wasn't a number!")
 				exit()
+			get_song_data(pageid_files[index])
 	elif user_input is "3":
 		exit()
 	else:
