@@ -6,10 +6,13 @@ import requests
 import json
 import csv
 import time
+from datetime import date
 
-# Hardcoded name of SDVX Song List page
-# You can change this if the page name changes
+#### Hardcoded Variables
+# You can change this if the RemyWiki page name changes
 sdvx_song_page = "Category:SOUND_VOLTEX_Songs"
+# Assemble the CSV file name using the current date
+csv_file_name = "song_page_ids--" + date.today().strftime("%Y-%m-%d") + ".csv"
 
 
 # Method for recursively searching a complex JSON tree
@@ -80,17 +83,18 @@ def get_song_list():
 			# sleep so we send requests slowly!
 			time.sleep(1)
 	except Exception as e:
-		print(e)
-		print("No \'cmcontinue\' value found, exiting loop.")
+		print("Finished downloading all pages!")
 		#get cmcontinue value
 		#run same string with cmcontinue value to get additional songs
 
 	# Save the list of song page IDs to a CSV file for later processing
-	with open("song_page_ids.csv", "w") as file:
+	print("Writing CSV file...")
+	with open(csv_file_name, "w") as file:
 		writer = csv.writer(file)
 		writer.writerow("pageid")
 		for pageid in song_page_ids:
 			writer.writerow(str(pageid))
+		print("Saved pageid output as " + csv_file_name)
 		file.close()
 
 ########################
@@ -117,11 +121,10 @@ def main():
 	if user_input is "1":
 		get_song_list()
 	elif user_input is "2":
-		print("Please input the name of your song pageid CSV")
-		print("(Press enter to use default name: song_page_ids.csv)")
+		print("Please input the name of your song pageid CSV file")
+		# TODO: add a function to search for all song_page_ids--*.csv files
+		# and let the user pick which date they wanna use
 		user_input = input("> ")
-		if len(user_input) is 0:
-			user_input = "song_page_ids.csv"
 		get_song_data(user_input)
 	elif user_input is "3":
 		exit()
