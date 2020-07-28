@@ -11,9 +11,6 @@ import json
 # for exporting as CSV
 import csv
 
-# for reading CSVs
-from csv import reader
-
 # for sleep()
 import time
 
@@ -151,6 +148,9 @@ def get_song_data(csvname):
 
 	# https://remywiki.com/api.php?action=query&format=json&prop=revisions&rvprop=content&rvslots=main&titles=%22Coconatsu%22%20wa%20yume%20no%20katachi
 
+################
+#     Main     #
+################
 def main():
 	print("####################################################")
 	print("# Please enter the number of what you'd like to do #")
