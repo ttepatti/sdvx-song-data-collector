@@ -139,6 +139,12 @@ def get_song_list():
 def get_song_data(pageids_file):
 	print("Fetching Page IDs from " + pageids_file + "...")
 
+	# store the total number of pages we're requesting
+	total_pages = 0
+	
+	# store how many have been parsed
+	total_parsed = 0
+
 	# store the page IDs in a bar-delimiated format (bd)
 	# since we can query the API with &pageids=1|2|3|4|5 to get multiple pages
 	pageids_bd = ""
@@ -148,9 +154,19 @@ def get_song_data(pageids_file):
 
 	# assemble the list of page IDs for our API call
 	with open(pageids_file, 'r') as file:
+		# For stats, get total number of pages we're requesting
+		for row in file:
+			total_pages += 1
+
+		# reset our position
+		file.seek(0)
+
+		# actually assemble rows here
 		for row in file:
 			# if count is 50, fire off an API request
 			if count is 50:
+				total_parsed += 50
+				print("Parsing page " + str(total_parsed) + " of " + str(total_pages) + " total pages.")
 				# assemble an API request with our 50 page IDs
 				page = requests.post("https://remywiki.com/api.php",
 						data = {
@@ -162,13 +178,20 @@ def get_song_data(pageids_file):
 							'pageids': pageids_bd
 						})
 				parse_song_data(page.content)
-
-			if pageids_bd is "":
-				# don't add bar for the first element
-				pageids_bd = row.rstrip()
+				# reset count
+				count = 0
+				# reste our pageids_bd string
+				pageids_bd = ""
+				# sleep to be kind to the API
+				time.sleep(1)
 			else:
-				pageids_bd = pageids_bd + "|" + row.rstrip()
-			count +=1
+				# else, continue on:
+				if pageids_bd is "":
+					# don't add bar for the first element
+					pageids_bd = row.rstrip()
+				else:
+					pageids_bd = pageids_bd + "|" + row.rstrip()
+				count +=1
 
 ################################
 #  Parse a song data API call  #
@@ -195,6 +218,7 @@ def main():
 	print("1 - Download pageids of all SDVX songs")
 	print("2 - Use list of SDVX pageids to get song data")
 	print("3 - Exit")
+	print("4 - Test JSON parsing with stored JSON file")
 	user_input = input("> ")
 	if user_input is "1":
 		get_song_list()
@@ -216,6 +240,13 @@ def main():
 			get_song_data(pageids_files[index])
 	elif user_input is "3":
 		exit()
+	elif user_input is "4":
+		print("running parse_song_data()")
+		# test JSON parsing using stored page content
+		with open("test.json", "r") as file:
+			# our file is one row lol
+			for row in file:
+				parse_song_data(row)
 	else:
 		print("Invalid input. Exiting...")
 		exit()
