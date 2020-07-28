@@ -74,12 +74,14 @@ def get_pageids_files():
 #########################
 def get_song_list():
 	# This request is split into multiple lines to make it (hopefully) easier to read
-	page = requests.get("https://remywiki.com/api.php" \
-						+ "?action=query" \
-						+ "&format=json" \
-						+ "&list=categorymembers" \
-						+ "&cmtitle=" + sdvx_song_page \
-						+ "&cmlimit=500")
+	page = requests.post("https://remywiki.com/api.php",
+								data = {
+									'action': 'query',
+									'format': 'json',
+									'list': 'categorymembers',
+									'cmtitle': sdvx_song_page
+									'cmlimit': '500'
+								})
 
 	# parse the returned page content as json data
 	json_data = json.loads(page.content)
